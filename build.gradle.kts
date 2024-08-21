@@ -19,14 +19,10 @@ idea {
 
 dependencies {
     testImplementation(kotlin("test"))
-    // https://central.sonatype.com/artifact/io.qtjambi/qtjambi-native-windows-x64
-    runtimeOnly("io.qtjambi:qtjambi-native-windows-x64:6.7.2")
     // https://central.sonatype.com/artifact/io.qtjambi/qtjambi-uic
     implementation("io.qtjambi:qtjambi-uic:6.7.2")
     // https://central.sonatype.com/artifact/io.qtjambi/qtjambi-uic-native-windows-x64
     runtimeOnly("io.qtjambi:qtjambi-uic-native-windows-x64:6.7.2")
-    // https://mvnrepository.com/artifact/io.qtjambi/qtjambi-uitools
-    implementation("io.qtjambi:qtjambi-uitools:6.7.2")
 }
 
 tasks.test {
@@ -37,6 +33,8 @@ tasks.shadowJar {
         attributes["Main-Class"] = "MainKt"
     }
     archiveFileName.set("Qt-Jambi-Uic-Tool-${version}.jar")
+    minimize()
+    mergeServiceFiles()
 }
 
 kotlin {
