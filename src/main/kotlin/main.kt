@@ -7,10 +7,67 @@ import io.qt.core.QList
 import io.qt.core.QScopeGuard
 import io.qt.core.Qt
 import io.qt.uic.Driver
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.*
+import java.util.jar.JarFile
 import kotlin.system.exitProcess
 
+
+private fun extractDlls(): File {
+    val tempDir = File(System.getProperty("java.io.tmpdir"), "native/bin").apply {
+        if (!exists()) mkdirs()
+    }
+
+    val classLoader = Thread.currentThread().contextClassLoader ?: throw IllegalStateException("ClassLoader not found")
+    // 获取 JAR 文件路径
+    val jarFileUrl = classLoader.getResource("bin/")?.toURI()
+        ?: throw IllegalStateException("Resource 'bin/' not found in JAR")
+    // 如果是 JAR 文件
+    if (jarFileUrl.scheme == "jar") {
+        val jarFilePath =
+            jarFileUrl.rawSchemeSpecificPart.substringAfter("file:").substringBefore("!").removePrefix("/")
+
+        // 打开 JAR 文件
+        JarFile(jarFilePath).use { jarFile ->
+            val entries = jarFile.entries()
+
+            val dllFiles = mutableListOf<String>()
+
+            // 遍历 JAR 文件中的所有条目
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                // 过滤出 bin 目录下的 DLL 文件
+                if (entry.name.startsWith("bin/") && entry.name.endsWith(".dll")) {
+                    dllFiles.add(entry.name)
+                }
+            }
+            dllFiles.forEach { dllFileName ->
+                val inputStream: InputStream = classLoader.getResourceAsStream(dllFileName)
+                    ?: throw IllegalStateException("Resource '$dllFileName' not found in JAR")
+                val dllFile = File(tempDir, dllFileName.substringAfter("bin/"))
+                FileOutputStream(dllFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+        }
+    } else {
+        println("The resource 'bin/' is not inside a JAR file.")
+    }
+    return tempDir
+}
+
 fun main(args: Array<String>) {
+    // 提取 DLL 文件
+    val tempDir = extractDlls()
+    // 设置 java.library.path
+    System.setProperty(
+        "java.library.path",
+        System.getProperty("java.library.path").replace(";.", "${tempDir.absolutePath};;.")
+    )
+
     Qt.qSetGlobalQHashSeed(0)
     QCoreApplication.setApplicationName("uic")
     QCoreApplication.setApplicationVersion(QtUtilities.qtjambiVersion().toString())
