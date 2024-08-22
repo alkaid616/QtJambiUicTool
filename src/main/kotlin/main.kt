@@ -22,8 +22,8 @@ private fun extractDlls(): File {
 
     val classLoader = Thread.currentThread().contextClassLoader ?: throw IllegalStateException("ClassLoader not found")
     // 获取 JAR 文件路径
-    val jarFileUrl = classLoader.getResource("bin/")?.toURI()
-        ?: throw IllegalStateException("Resource 'bin/' not found in JAR")
+    val jarFileUrl = classLoader.getResource("META-INF/")?.toURI()
+        ?: throw IllegalStateException("Resource 'META-INF/' not found in JAR")
     // 如果是 JAR 文件
     if (jarFileUrl.scheme == "jar") {
         val jarFilePath =
@@ -68,8 +68,14 @@ fun main(args: Array<String>) {
         System.getProperty("java.library.path").replace(";.", "${tempDir.absolutePath};;.")
     )
 
+    val classLoader = Thread.currentThread().contextClassLoader ?: throw IllegalStateException("ClassLoader not found")
+    // 获取 JAR 文件路径
+    val jarFileUrl = classLoader.getResource("META-INF")?.toURI()
+        ?: throw IllegalStateException("Resource 'META-INF/' not found in JAR")
+    val jarFilePath = jarFileUrl.rawSchemeSpecificPart.substringAfter("file:").substringBefore("!").removePrefix("/")
+
     Qt.qSetGlobalQHashSeed(0)
-    QCoreApplication.setApplicationName("uic")
+    QCoreApplication.setApplicationName("java -jar ${File(jarFilePath).name}")
     QCoreApplication.setApplicationVersion(QtUtilities.qtjambiVersion().toString())
     println("currentPath: ${QDir.currentPath()}")
     QCoreApplication.initialize(args)
@@ -138,7 +144,6 @@ fun main(args: Array<String>) {
             generatorOption.setDescription("Select generator.")
             generatorOption.setValueName("c++|python|java|kotlin")
             generatorOption.setDefaultValue("java")
-            generatorOption.setFlags(QCommandLineOption.Flag.HiddenFromHelp)
             addOption(generatorOption)
 
             val connectionsOption = QCommandLineOption(QList.of("c", "connections"))
