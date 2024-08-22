@@ -236,7 +236,7 @@ fun main(args: Array<String>) {
                 inputFile?.let {
                     println("inputFile: $inputFile")
                     if (driver.option().outputDir.isEmpty()) {
-                        driver.option().outputDir = inputFile.substringBeforeLast("/")
+                        driver.option().outputDir = "./$inputFile".substringBeforeLast("/")
                         println("outputDir: ${driver.option().outputDir}")
                     }
                     driver.uic(it, driver.option().outputDir, language)
