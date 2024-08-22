@@ -210,7 +210,7 @@ fun main(args: Array<String>) {
             if (isSet(generatorOption)) println("generator: ${value(generatorOption)}")
             if (isSet(inputOption) && value(inputOption).isNotEmpty()) {
                 val inputDir = QDir.fromNativeSeparators(value(inputOption))
-                var dir = QDir(inputDir)
+                val dir = QDir(inputDir)
                 // 设置过滤器，只获取文件
                 dir.setFilter(QDir.Filter.Files)
                 // 设置名字过滤器，只获取 .ui 文件
@@ -218,6 +218,10 @@ fun main(args: Array<String>) {
                 // 获取所有匹配的文件名
                 val uiFiles = dir.entryList()
                 // 输出文件路径
+                if (driver.option().outputDir.isEmpty()) {
+                    driver.option().outputDir = inputDir
+                    println("outputDir: ${driver.option().outputDir}")
+                }
                 if (uiFiles.isNotEmpty())
                     uiFiles.forEach {
                         driver.uic(dir.absoluteFilePath(it), driver.option().outputDir, language)
@@ -231,6 +235,10 @@ fun main(args: Array<String>) {
                 }
                 inputFile?.let {
                     println("inputFile: $inputFile")
+                    if (driver.option().outputDir.isEmpty()) {
+                        driver.option().outputDir = inputFile.substringBeforeLast("/")
+                        println("outputDir: ${driver.option().outputDir}")
+                    }
                     driver.uic(it, driver.option().outputDir, language)
                 }
 
